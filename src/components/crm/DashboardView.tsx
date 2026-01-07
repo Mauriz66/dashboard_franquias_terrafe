@@ -331,7 +331,7 @@ export function DashboardView({ leads }: DashboardViewProps) {
           <CardContent>
             <div className="space-y-4">
               {Object.entries(avgTimePerStage).map(([status, time]) => {
-                const column = kanbanColumns.find((c) => c.id === status);
+                const column = pipelineColumns.find((c) => c.id === status);
                 return (
                   <div key={status} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
