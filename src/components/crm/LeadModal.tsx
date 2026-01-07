@@ -88,8 +88,8 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
                 {lead.name}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-2">
-                <Badge className={cn('text-white border-0', statusColors[lead.status])}>
-                  {statusLabels[lead.status]}
+                <Badge className={cn('text-white border-0', getStatusColor(lead.status))}>
+                  {getStatusLabel(lead.status)}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
                   via {sourceLabels[lead.source]}
@@ -153,14 +153,14 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
                   <User className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <span className="text-xs text-muted-foreground">Perfil</span>
-                    <p className="text-sm font-medium">{profileLabels[lead.profile]}</p>
+                    <p className="text-sm font-medium">{profileLabels[lead.profile] || lead.profile}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
                   <Briefcase className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <span className="text-xs text-muted-foreground">Operação</span>
-                    <p className="text-sm font-medium">{operationLabels[lead.operation]}</p>
+                    <p className="text-sm font-medium">{operationLabels[lead.operation] || lead.operation}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
@@ -278,7 +278,7 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
           <div className="text-xs text-muted-foreground pt-4 border-t border-border">
             <p>
               Criado em{' '}
-              {new Date(lead.createdAt).toLocaleDateString('pt-BR', {
+              {new Date(lead.created_at || lead.createdAt || new Date()).toLocaleDateString('pt-BR', {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',
@@ -288,7 +288,7 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
             </p>
             <p>
               Atualizado em{' '}
-              {new Date(lead.updatedAt).toLocaleDateString('pt-BR', {
+              {new Date(lead.updated_at || lead.updatedAt || new Date()).toLocaleDateString('pt-BR', {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',
