@@ -200,10 +200,22 @@ export function useLeads() {
   }, [leads, addLead, toast]);
 
   const updateLeadStatus = useCallback(async (leadId: string, newStatus: LeadStatus) => {
-    try {
-      const lead = leads.find(l => l.id === leadId);
-      if (!lead) return;
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+    
+    const oldStatus = lead.status;
+    if (oldStatus === newStatus) return;
 
+    // Optimistic Update
+    setLeads(currentLeads => 
+      currentLeads.map(l => 
+        l.id === leadId 
+          ? { ...l, status: newStatus, updated_at: new Date().toISOString() } 
+          : l
+      )
+    );
+
+    try {
       const { error: leadError } = await supabase
         .from('leads')
         .update({ 
@@ -219,16 +231,25 @@ export function useLeads() {
         lead_id: leadId,
         type: 'status_change',
         content: 'Status alterado',
-        old_status: lead.status,
+        old_status: oldStatus,
         new_status: newStatus
       });
 
-      await fetchLeads();
+      // No need to fetchLeads() as we already updated the state
     } catch (error) {
       console.error('Error updating status:', error);
       toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
+      
+      // Rollback
+      setLeads(currentLeads => 
+        currentLeads.map(l => 
+          l.id === leadId 
+            ? { ...l, status: oldStatus, updated_at: lead.updated_at } 
+            : l
+        )
+      );
     }
-  }, [leads, fetchLeads, toast]);
+  }, [leads, toast]);
 
   const addNote = useCallback(async (leadId: string, content: string) => {
     try {
