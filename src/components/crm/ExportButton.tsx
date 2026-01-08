@@ -43,7 +43,7 @@ export function ExportButton({ leads, disabled }: ExportButtonProps) {
       lead.capital,
       getStatusLabel(lead.status),
       sourceLabels[lead.source],
-      new Date(lead.createdAt).toLocaleDateString('pt-BR'),
+      new Date(lead.created_at || lead.createdAt || new Date()).toLocaleDateString('pt-BR'),
     ]);
 
     const csvContent = [

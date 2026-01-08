@@ -92,7 +92,7 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
                   {getStatusLabel(lead.status)}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  via {sourceLabels[lead.source]}
+                  via {sourceLabels[lead.source] || lead.source}
                 </span>
               </div>
             </div>

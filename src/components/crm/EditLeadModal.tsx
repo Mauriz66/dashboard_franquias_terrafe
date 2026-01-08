@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { formatPhone } from '@/lib/formatters';
 import { Save, X } from 'lucide-react';
+import { usePipeline } from '@/hooks/usePipeline';
 
 interface EditLeadModalProps {
   lead: Lead | null;
@@ -26,16 +27,6 @@ interface EditLeadModalProps {
   onOpenChange: (open: boolean) => void;
   onSave: (lead: Lead) => void;
 }
-
-const statusOptions: { value: LeadStatus; label: string }[] = [
-  { value: 'novo', label: 'Novo' },
-  { value: 'contato', label: 'Em Contato' },
-  { value: 'qualificado', label: 'Qualificado' },
-  { value: 'proposta', label: 'Proposta' },
-  { value: 'negociacao', label: 'Negociação' },
-  { value: 'ganho', label: 'Ganho' },
-  { value: 'perdido', label: 'Perdido' },
-];
 
 const sourceOptions: { value: LeadSource; label: string }[] = [
   { value: 'instagram', label: 'Instagram' },
@@ -62,6 +53,7 @@ const operationOptions: { value: LeadOperation; label: string }[] = [
 ];
 
 export function EditLeadModal({ lead, open, onOpenChange, onSave }: EditLeadModalProps) {
+  const { columns: pipelineColumns } = usePipeline();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -74,6 +66,9 @@ export function EditLeadModal({ lead, open, onOpenChange, onSave }: EditLeadModa
     source: 'whatsapp' as LeadSource,
     status: 'novo' as LeadStatus,
     notes: '',
+    meetingDate: '',
+    meetingTime: '',
+    meetingLink: '',
   });
 
   useEffect(() => {
@@ -90,6 +85,9 @@ export function EditLeadModal({ lead, open, onOpenChange, onSave }: EditLeadModa
         source: lead.source,
         status: lead.status,
         notes: lead.notes || '',
+        meetingDate: lead.meeting?.date || '',
+        meetingTime: lead.meeting?.time || '',
+        meetingLink: lead.meeting?.link || '',
       });
     }
   }, [lead]);
@@ -101,6 +99,11 @@ export function EditLeadModal({ lead, open, onOpenChange, onSave }: EditLeadModa
     const updatedLead: Lead = {
       ...lead,
       ...formData,
+      meeting: formData.meetingDate ? {
+        date: formData.meetingDate,
+        time: formData.meetingTime,
+        link: formData.meetingLink
+      } : undefined,
       updatedAt: new Date().toISOString(),
     };
 
@@ -254,9 +257,9 @@ export function EditLeadModal({ lead, open, onOpenChange, onSave }: EditLeadModa
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {statusOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                    {pipelineColumns.map((col) => (
+                      <SelectItem key={col.id} value={col.id}>
+                        {col.title}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -292,6 +295,43 @@ export function EditLeadModal({ lead, open, onOpenChange, onSave }: EditLeadModa
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
             />
+          </div>
+
+          {/* Meeting */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+              Agendamento
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="meetingDate">Data</Label>
+                <Input
+                  id="meetingDate"
+                  type="date"
+                  value={formData.meetingDate}
+                  onChange={(e) => setFormData({ ...formData, meetingDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="meetingTime">Horário</Label>
+                <Input
+                  id="meetingTime"
+                  type="time"
+                  value={formData.meetingTime}
+                  onChange={(e) => setFormData({ ...formData, meetingTime: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="meetingLink">Link da Reunião</Label>
+                <Input
+                  id="meetingLink"
+                  type="url"
+                  placeholder="https://meet.google.com/..."
+                  value={formData.meetingLink}
+                  onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Actions */}

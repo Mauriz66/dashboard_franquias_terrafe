@@ -58,7 +58,7 @@ export function LeadCard({ lead, onClick, onEdit, onDelete, onDuplicate, onAddNo
         </div>
         <div className="absolute top-4 right-4 flex items-start gap-2">
            <span className="text-lg" title={lead.source}>
-            {sourceIcons[lead.source]}
+            {sourceIcons[lead.source] || '📋'}
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -114,7 +114,7 @@ export function LeadCard({ lead, onClick, onEdit, onDelete, onDuplicate, onAddNo
           <span className="font-medium text-foreground">{lead.capital}</span>
         </div>
         <div className="text-xs">
-          {profileLabels[lead.profile]}
+          {profileLabels[lead.profile] || lead.profile}
         </div>
       </div>
 

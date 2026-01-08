@@ -38,6 +38,7 @@ export interface LeadActivity {
   type: 'note' | 'status_change' | 'call' | 'email' | 'meeting';
   content: string;
   createdAt: string;
+  created_at?: string;
   oldStatus?: LeadStatus;
   newStatus?: LeadStatus;
 }

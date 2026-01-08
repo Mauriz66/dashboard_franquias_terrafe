@@ -28,6 +28,7 @@ import {
 import { Lead, LeadProfile, LeadOperation, LeadSource } from '@/types/lead';
 import { formatPhone } from '@/lib/formatters';
 import { useEffect } from "react";
+import { usePipeline } from '@/hooks/usePipeline';
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -40,6 +41,9 @@ const formSchema = z.object({
   interest: z.string().optional(),
   source: z.string().optional(),
   notes: z.string().optional(),
+  meetingDate: z.string().optional(),
+  meetingTime: z.string().optional(),
+  meetingLink: z.string().optional(),
 });
 
 interface AddLeadModalProps {
@@ -49,6 +53,7 @@ interface AddLeadModalProps {
 }
 
 export function AddLeadModal({ open, onOpenChange, onAdd }: AddLeadModalProps) {
+  const { columns: pipelineColumns } = usePipeline();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,6 +67,9 @@ export function AddLeadModal({ open, onOpenChange, onAdd }: AddLeadModalProps) {
       interest: "",
       source: "outro",
       notes: "",
+      meetingDate: "",
+      meetingTime: "",
+      meetingLink: "",
     },
   });
 
@@ -83,9 +91,14 @@ export function AddLeadModal({ open, onOpenChange, onAdd }: AddLeadModalProps) {
       operation: (values.operation as LeadOperation) || "definindo",
       interest: values.interest || "",
       source: (values.source as LeadSource) || "outro",
-      status: "novo",
+      status: pipelineColumns[0]?.id || "novo",
       tags: [],
       notes: values.notes || "",
+      meeting: values.meetingDate ? {
+        date: values.meetingDate,
+        time: values.meetingTime || '',
+        link: values.meetingLink
+      } : undefined,
     });
     onOpenChange(false);
   }
@@ -303,6 +316,54 @@ export function AddLeadModal({ open, onOpenChange, onAdd }: AddLeadModalProps) {
                 </FormItem>
               )}
             />
+
+            {/* Meeting */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                Agendamento
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="meetingDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="meetingTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Horário</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="meetingLink"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Link da Reunião</FormLabel>
+                      <FormControl>
+                        <Input type="url" placeholder="https://..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-border">

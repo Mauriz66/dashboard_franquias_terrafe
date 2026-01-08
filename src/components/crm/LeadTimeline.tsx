@@ -39,7 +39,7 @@ export function LeadTimeline({ activities }: LeadTimelineProps) {
   };
 
   const sortedActivities = [...activities].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => new Date(b.created_at || b.createdAt || new Date()).getTime() - new Date(a.created_at || a.createdAt || new Date()).getTime()
   );
 
   if (sortedActivities.length === 0) {
@@ -86,7 +86,7 @@ export function LeadTimeline({ activities }: LeadTimelineProps) {
               )}
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                 <Clock className="h-3 w-3" />
-                {new Date(activity.createdAt).toLocaleDateString('pt-BR', {
+                {new Date(activity.created_at || activity.createdAt || new Date()).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: '2-digit',
                   hour: '2-digit',

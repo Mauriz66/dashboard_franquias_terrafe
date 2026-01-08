@@ -66,7 +66,7 @@ const sourceLabels: Record<string, string> = {
 };
 
 function isLeadStale(lead: Lead): boolean {
-  const lastUpdate = new Date(lead.updatedAt);
+  const lastUpdate = new Date(lead.updated_at || lead.updatedAt || new Date());
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
   return diffDays > 7 && !['ganho', 'perdido'].includes(lead.status);
@@ -138,7 +138,9 @@ export function LeadsTableView({
           comparison = statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
           break;
         case 'createdAt':
-          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+          const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+          comparison = dateA - dateB;
           break;
       }
       
@@ -319,7 +321,7 @@ export function LeadsTableView({
                   </TableCell>
                   <TableCell className="text-sm">{lead.location}</TableCell>
                   <TableCell className="text-sm">{lead.capital}</TableCell>
-                  <TableCell className="text-sm">{sourceLabels[lead.source]}</TableCell>
+                  <TableCell className="text-sm">{sourceLabels[lead.source] || lead.source}</TableCell>
                   <TableCell>
                     <Badge className={cn('text-white border-0', getStatusColor(lead.status))}>
                       {getStatusLabel(lead.status)}
