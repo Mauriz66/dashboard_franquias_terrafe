@@ -1,5 +1,5 @@
 import { Lead } from '@/types/lead';
-import { MapPin, Phone, Mail, Calendar, MessageCircle, MoreHorizontal, Pencil, Trash2, Copy, StickyNote } from 'lucide-react';
+import { MapPin, Phone, Mail, Calendar, MessageCircle, MoreHorizontal, Pencil, Trash2, Copy, StickyNote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +18,9 @@ interface LeadCardProps {
   onDelete?: (lead: Lead) => void;
   onDuplicate?: (lead: Lead) => void;
   onAddNote?: (lead: Lead) => void;
+  onMove?: (lead: Lead, direction: 'left' | 'right') => void;
+  canMoveLeft?: boolean;
+  canMoveRight?: boolean;
 }
 
 const sourceIcons: Record<string, string> = {
@@ -37,7 +40,7 @@ const profileLabels: Record<string, string> = {
   outro: 'Outro',
 };
 
-export function LeadCard({ lead, onClick, onEdit, onDelete, onDuplicate, onAddNote }: LeadCardProps) {
+export function LeadCard({ lead, onClick, onEdit, onDelete, onDuplicate, onAddNote, onMove, canMoveLeft, canMoveRight }: LeadCardProps) {
   const whatsappNumber = lead.phone.replace(/\D/g, '');
 
   return (
@@ -129,30 +132,63 @@ export function LeadCard({ lead, onClick, onEdit, onDelete, onDuplicate, onAddNo
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-        <a
-          href={`https://wa.me/${whatsappNumber}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center h-8 w-8 rounded-md bg-tag-whatsapp/10 text-tag-whatsapp hover:bg-tag-whatsapp/20 transition-colors"
-        >
-          <MessageCircle className="h-4 w-4" />
-        </a>
-        <a
-          href={`tel:${lead.phone}`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-        >
-          <Phone className="h-4 w-4" />
-        </a>
-        <a
-          href={`mailto:${lead.email}`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center h-8 w-8 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
-        >
-          <Mail className="h-4 w-4" />
-        </a>
+      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+        <div className="flex items-center gap-2">
+          <a
+            href={`https://wa.me/${whatsappNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center h-8 w-8 rounded-md bg-tag-whatsapp/10 text-tag-whatsapp hover:bg-tag-whatsapp/20 transition-colors"
+          >
+            <MessageCircle className="h-4 w-4" />
+          </a>
+          <a
+            href={`tel:${lead.phone}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            <Phone className="h-4 w-4" />
+          </a>
+          <a
+            href={`mailto:${lead.email}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center h-8 w-8 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+          >
+            <Mail className="h-4 w-4" />
+          </a>
+        </div>
+
+        {onMove && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-muted"
+              disabled={!canMoveLeft}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(lead, 'left');
+              }}
+              title="Mover para esquerda"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-muted"
+              disabled={!canMoveRight}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(lead, 'right');
+              }}
+              title="Mover para direita"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

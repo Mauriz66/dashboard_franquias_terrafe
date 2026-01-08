@@ -13,6 +13,9 @@ interface KanbanColumnProps {
   onDeleteLead?: (lead: Lead) => void;
   onDuplicateLead?: (lead: Lead) => void;
   onAddNote?: (lead: Lead) => void;
+  onMoveLead?: (lead: Lead, direction: 'left' | 'right') => void;
+  isFirstColumn?: boolean;
+  isLastColumn?: boolean;
 }
 
 export function KanbanColumn({ 
@@ -24,7 +27,10 @@ export function KanbanColumn({
   onEditLead,
   onDeleteLead,
   onDuplicateLead,
-  onAddNote
+  onAddNote,
+  onMoveLead,
+  isFirstColumn,
+  isLastColumn
 }: KanbanColumnProps) {
   return (
     <div className="flex flex-col min-w-[300px] max-w-[300px] bg-secondary/50 rounded-xl">
@@ -67,6 +73,9 @@ export function KanbanColumn({
                       onDelete={onDeleteLead}
                       onDuplicate={onDuplicateLead}
                       onAddNote={onAddNote}
+                      onMove={onMoveLead}
+                      canMoveLeft={!isFirstColumn}
+                      canMoveRight={!isLastColumn}
                     />
                   </div>
                 )}

@@ -108,6 +108,18 @@ export function KanbanBoard({
     }
   };
 
+  const handleMoveLead = (lead: Lead, direction: 'left' | 'right') => {
+    const currentIndex = pipelineColumns.findIndex(col => col.id === lead.status);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+    
+    if (newIndex >= 0 && newIndex < pipelineColumns.length) {
+      const newStatus = pipelineColumns[newIndex].id;
+      onUpdateLeadStatus(lead.id, newStatus);
+    }
+  };
+
   const columns: KanbanColumnType[] = pipelineColumns.map((column) => ({
     ...column,
     leads: filteredLeads.filter((lead) => lead.status === column.id),
@@ -151,6 +163,9 @@ export function KanbanBoard({
                 onDeleteLead={handleDeleteClick}
                 onDuplicateLead={(lead) => onDuplicateLead(lead.id)}
                 onAddNote={handleAddNoteClick}
+                onMoveLead={handleMoveLead}
+                isFirstColumn={index === 0}
+                isLastColumn={index === columns.length - 1}
               />
             </div>
           ))}
