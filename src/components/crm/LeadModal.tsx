@@ -21,9 +21,11 @@ import {
   Clock,
   ExternalLink,
   Pencil,
+  Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePipeline } from '@/hooks/usePipeline';
+import { useToast } from '@/hooks/use-toast';
 
 interface LeadModalProps {
   lead: Lead | null;
@@ -76,6 +78,41 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
   const handleEdit = () => {
     onOpenChange(false);
     onEdit?.(lead);
+  };
+
+  const { toast } = useToast();
+
+  const handleCopyToClipboard = () => {
+    const text = `*Detalhes do Lead*
+
+*Nome:* ${lead.name}
+*Status:* ${getStatusLabel(lead.status)}
+*Origem:* ${sourceLabels[lead.source] || lead.source}
+
+*Contato:*
+📧 ${lead.email}
+📱 ${lead.phone}
+📍 ${lead.location}
+
+*Perfil:*
+💰 Capital: ${lead.capital}
+👤 Perfil: ${profileLabels[lead.profile] || lead.profile}
+💼 Operação: ${operationLabels[lead.operation] || lead.operation}
+🎯 Interesse: ${lead.interest}
+${lead.meeting ? `
+*Agendamento:*
+📅 ${new Date(lead.meeting.date + 'T12:00:00').toLocaleDateString('pt-BR')} às ${lead.meeting.time}
+${lead.meeting.link ? `🔗 ${lead.meeting.link}` : ''}` : ''}
+${lead.notes ? `
+*Observações:*
+${lead.notes}` : ''}
+`;
+
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copiado!",
+      description: "Detalhes formatados para WhatsApp.",
+    });
   };
 
   return (
@@ -259,6 +296,10 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
                 <MessageCircle className="h-4 w-4" />
                 Iniciar Conversa
               </a>
+            </Button>
+            <Button variant="outline" onClick={handleCopyToClipboard} className="gap-2">
+              <Copy className="h-4 w-4" />
+              Copiar
             </Button>
             <Button variant="outline" asChild className="gap-2">
               <a href={`tel:${lead.phone}`}>
