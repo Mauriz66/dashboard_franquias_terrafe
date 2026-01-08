@@ -123,7 +123,7 @@ export function LeadCard({ lead, onClick, onEdit, onDelete, onDuplicate, onAddNo
         <div className="flex items-center gap-1.5 text-xs text-primary bg-primary/5 rounded-md p-2 mb-3">
           <Calendar className="h-3.5 w-3.5" />
           <span>
-            {new Date(lead.meeting.date).toLocaleDateString('pt-BR')} às {lead.meeting.time}
+            {new Date(lead.meeting.date + 'T12:00:00').toLocaleDateString('pt-BR')} às {lead.meeting.time}
           </span>
         </div>
       )}

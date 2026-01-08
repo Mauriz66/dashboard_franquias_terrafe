@@ -207,7 +207,7 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
                   <div>
                     <p className="font-semibold">Reunião Agendada</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(lead.meeting.date).toLocaleDateString('pt-BR', {
+                      {new Date(lead.meeting.date + 'T12:00:00').toLocaleDateString('pt-BR', {
                         weekday: 'long',
                         day: 'numeric',
                         month: 'long',
