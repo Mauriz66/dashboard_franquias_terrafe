@@ -132,22 +132,54 @@ app.post('/', async (req, res) => {
       tags: tagIds,
     };
 
-    // 2. Insert Lead
-    const newLead = await pb.collection('leads').create(leadToInsert);
-    console.log('Lead inserted:', newLead.id);
+    // 2. Insert or Update Lead (Upsert Logic)
+    let leadRecord;
+    let isNew = false;
+
+    // Try to find existing lead by email
+    if (leadToInsert.email) {
+        try {
+            const existingLead = await pb.collection('leads').getFirstListItem(`email="${leadToInsert.email}"`);
+            // Update existing
+            leadRecord = await pb.collection('leads').update(existingLead.id, leadToInsert);
+            console.log('Lead updated:', leadRecord.id);
+        } catch (e) {
+            // Not found, proceed to create
+        }
+    }
+
+    // If not found by email, try by phone (if provided)
+    if (!leadRecord && leadToInsert.phone) {
+         try {
+            // Clean phone for search might be needed, but assuming exact match for now
+            const existingLead = await pb.collection('leads').getFirstListItem(`phone="${leadToInsert.phone}"`);
+            // Update existing
+            leadRecord = await pb.collection('leads').update(existingLead.id, leadToInsert);
+            console.log('Lead updated (by phone):', leadRecord.id);
+        } catch (e) {
+            // Not found
+        }
+    }
+
+    // If still no record, create new
+    if (!leadRecord) {
+        leadRecord = await pb.collection('leads').create(leadToInsert);
+        isNew = true;
+        console.log('Lead created:', leadRecord.id);
+    }
     
     // 3. Insert Activity
     try {
         await pb.collection('activities').create({
-            lead: newLead.id,
+            lead: leadRecord.id,
             type: 'note',
-            content: 'Lead criado via Webhook'
+            content: isNew ? 'Lead criado via Webhook' : 'Lead atualizado via Webhook'
         });
     } catch (actError) {
-        console.error('Error creating initial activity:', actError);
+        console.error('Error creating activity:', actError);
     }
 
-    res.status(200).json({ success: true, leadId: newLead.id });
+    res.status(200).json({ success: true, leadId: leadRecord.id, isNew });
 
   } catch (error) {
     console.error('Error processing webhook:', error);
