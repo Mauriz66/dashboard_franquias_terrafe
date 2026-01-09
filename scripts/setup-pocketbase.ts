@@ -42,7 +42,19 @@ async function main() {
                 { name: 'color', type: 'text', required: false }
             ]
         });
+        console.log('Collection "tags" created.');
     }
+
+    // Set public API rules for tags
+    const tagsCollection = await pb.collections.getOne('tags');
+    await pb.collections.update(tagsCollection.id, {
+        listRule: '',
+        viewRule: '',
+        createRule: '', // Public create for testing/webhook
+        updateRule: '',
+        deleteRule: '',
+    });
+    console.log('API Rules for "tags" updated to public.');
 
     // 2. Leads Collection
     try {
@@ -78,7 +90,19 @@ async function main() {
                 }
             ]
         });
+        console.log('Collection "leads" created.');
     }
+
+    // Set public API rules for leads
+    const leadsCollection = await pb.collections.getOne('leads');
+    await pb.collections.update(leadsCollection.id, {
+        listRule: '',
+        viewRule: '',
+        createRule: '',
+        updateRule: '',
+        deleteRule: '',
+    });
+    console.log('API Rules for "leads" updated to public.');
 
     // 3. Activities Collection
     try {
@@ -98,13 +122,25 @@ async function main() {
                     cascadeDelete: true,
                     maxSelect: 1
                 },
-                { name: 'type', type: 'text', required: true },
+                { name: 'type', type: 'text', required: true }, // 'note', 'status_change', 'email', 'call'
                 { name: 'content', type: 'text', required: false },
                 { name: 'old_status', type: 'text', required: false },
                 { name: 'new_status', type: 'text', required: false }
             ]
         });
+        console.log('Collection "activities" created.');
     }
+
+    // Set public API rules for activities
+    const activitiesCollection = await pb.collections.getOne('activities');
+    await pb.collections.update(activitiesCollection.id, {
+        listRule: '',
+        viewRule: '',
+        createRule: '',
+        updateRule: '',
+        deleteRule: '',
+    });
+    console.log('API Rules for "activities" updated to public.');
 
     // 4. Pipeline Stages Collection
     try {
@@ -139,26 +175,18 @@ async function main() {
             console.log(`Created stage: ${stage.title}`);
         }
     }
-    
-    // 5. Update Rules to Public (for immediate usage)
-    const collections = ['leads', 'tags', 'activities', 'pipeline_stages'];
-    for (const name of collections) {
-        try {
-            const collection = await pb.collections.getOne(name);
-            await pb.collections.update(collection.id, {
-                listRule: '',
-                viewRule: '',
-                createRule: '',
-                updateRule: '',
-                deleteRule: ''
-            });
-            console.log(`Updated rules for ${name} to public.`);
-        } catch (e) {
-            console.error(`Failed to update rules for ${name}:`, e);
-        }
-    }
-    
-    console.log('Setup complete!');
+
+    // Set public API rules for pipeline_stages
+    const pipelineCollection = await pb.collections.getOne('pipeline_stages');
+    await pb.collections.update(pipelineCollection.id, {
+        listRule: '',
+        viewRule: '',
+        createRule: '',
+        updateRule: '',
+        deleteRule: '',
+    });
+    console.log('API Rules for "pipeline_stages" updated to public.');
+
 }
 
 main().catch(console.error);
