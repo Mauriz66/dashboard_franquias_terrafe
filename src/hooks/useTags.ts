@@ -3,6 +3,12 @@ import { useToast } from '@/hooks/use-toast';
 import { pb } from '@/lib/pocketbase';
 import { LeadTag } from '@/types/lead';
 
+type PbTag = {
+  id: string;
+  name: string;
+  color?: string;
+};
+
 export function useTags() {
   const [tags, setTags] = useState<LeadTag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,16 +17,16 @@ export function useTags() {
   const fetchTags = useCallback(async () => {
     try {
       setLoading(true);
-      const records = await pb.collection('tags').getFullList({
+      const records = await pb.collection('tags').getFullList<PbTag>({
         sort: 'name',
       });
 
-      setTags(records.map((r: any) => ({
+      setTags(records.map((r) => ({
         id: r.id,
         name: r.name,
         color: r.color,
       })));
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching tags:', error);
       toast({ 
         title: 'Erro ao carregar tags', 

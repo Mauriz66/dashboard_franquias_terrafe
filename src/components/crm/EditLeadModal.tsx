@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -120,6 +121,9 @@ export function EditLeadModal({ lead, open, onOpenChange, onSave }: EditLeadModa
           <DialogTitle className="text-xl font-display">
             Editar Lead
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Formulário para editar os dados do lead
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">

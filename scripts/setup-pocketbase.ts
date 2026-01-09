@@ -37,7 +37,7 @@ async function main() {
         await pb.collections.create({
             name: 'tags',
             type: 'base',
-            schema: [
+            fields: [
                 { name: 'name', type: 'text', required: true },
                 { name: 'color', type: 'text', required: false }
             ]
@@ -65,7 +65,7 @@ async function main() {
         await pb.collections.create({
             name: 'leads',
             type: 'base',
-            schema: [
+            fields: [
                 { name: 'name', type: 'text', required: true },
                 { name: 'email', type: 'email', required: false },
                 { name: 'phone', type: 'text', required: false },
@@ -86,7 +86,7 @@ async function main() {
                     required: false,
                     collectionId: (await pb.collections.getOne('tags')).id,
                     cascadeDelete: false,
-                    maxSelect: null // Multiple
+                    maxSelect: 999
                 }
             ]
         });
@@ -113,7 +113,7 @@ async function main() {
         await pb.collections.create({
             name: 'activities',
             type: 'base',
-            schema: [
+            fields: [
                 { 
                     name: 'lead', 
                     type: 'relation', 
@@ -151,11 +151,11 @@ async function main() {
         await pb.collections.create({
             name: 'pipeline_stages',
             type: 'base',
-            schema: [
+            fields: [
                 { name: 'title', type: 'text', required: true },
                 { name: 'color', type: 'text', required: true },
                 { name: 'slug', type: 'text', required: true },
-                { name: 'order_index', type: 'number', required: true }
+                { name: 'order_index', type: 'number', required: false }
             ]
         });
 

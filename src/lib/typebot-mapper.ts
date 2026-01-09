@@ -13,7 +13,7 @@ export interface TypebotVariables {
   visao_cliente?: string;
   prazo?: string;
   confirmacao?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const mapSource = (source?: string): LeadSource => {

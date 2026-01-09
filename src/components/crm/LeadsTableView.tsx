@@ -134,13 +134,17 @@ export function LeadsTableView({
           comparison = a.capital.localeCompare(b.capital);
           break;
         case 'status':
-          const statusOrder = pipelineColumns.map(c => c.id);
-          comparison = statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+          {
+            const statusOrder = pipelineColumns.map(c => c.id);
+            comparison = statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+          }
           break;
         case 'createdAt':
-          const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
-          const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
-          comparison = dateA - dateB;
+          {
+            const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+            const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+            comparison = dateA - dateB;
+          }
           break;
       }
       
@@ -148,7 +152,7 @@ export function LeadsTableView({
     });
 
     return result;
-  }, [leads, searchTerm, statusFilter, sourceFilter, sortField, sortDirection]);
+  }, [leads, searchTerm, statusFilter, sourceFilter, sortField, sortDirection, pipelineColumns]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {

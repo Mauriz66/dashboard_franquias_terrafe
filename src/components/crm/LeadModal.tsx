@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,9 +60,10 @@ const sourceLabels: Record<string, string> = {
 };
 
 export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) {
-  if (!lead) return null;
-  
   const { columns: pipelineColumns } = usePipeline();
+  const { toast } = useToast();
+
+  if (!lead) return null;
 
   const getStatusLabel = (status: string) => {
     const col = pipelineColumns.find(c => c.id === status);
@@ -79,8 +81,6 @@ export function LeadModal({ lead, open, onOpenChange, onEdit }: LeadModalProps) 
     onOpenChange(false);
     onEdit?.(lead);
   };
-
-  const { toast } = useToast();
 
   const handleCopyToClipboard = () => {
     const text = `*Detalhes do Lead*
@@ -124,6 +124,9 @@ ${lead.notes}` : ''}
               <DialogTitle className="text-2xl font-display">
                 {lead.name}
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                Detalhes do lead
+              </DialogDescription>
               <div className="flex items-center gap-2 mt-2">
                 <Badge className={cn('text-white border-0', getStatusColor(lead.status))}>
                   {getStatusLabel(lead.status)}

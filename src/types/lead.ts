@@ -6,20 +6,23 @@ export type LeadSource =
   | 'whatsapp'
   | 'website'
   | 'indicacao'
-  | 'outro';
+  | 'outro'
+  | string;
 
 export type LeadProfile = 
   | 'empresario'
   | 'investidor'
   | 'autonomo'
   | 'assalariado'
-  | 'outro';
+  | 'outro'
+  | string;
 
 export type LeadOperation = 
   | 'investidor'
   | 'operador'
   | 'definindo'
-  | 'outro';
+  | 'outro'
+  | string;
 
 export interface LeadTag {
   id: string;

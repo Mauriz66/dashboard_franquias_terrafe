@@ -10,6 +10,13 @@ export interface PipelineStage {
   order_index: number;
 }
 
+type PbPipelineStage = {
+  id: string;
+  slug?: string;
+  title: string;
+  color: string;
+};
+
 export function usePipeline() {
   const [columns, setColumns] = useState<Omit<KanbanColumn, 'leads'>[]>(defaultColumns);
   const [loading, setLoading] = useState(true);
@@ -17,15 +24,15 @@ export function usePipeline() {
   const fetchPipeline = useCallback(async () => {
     try {
       setLoading(true);
-      const records = await pb.collection('pipeline_stages').getFullList({
+      const records = await pb.collection('pipeline_stages').getFullList<PbPipelineStage>({
         sort: 'order_index',
       });
 
       if (records && records.length > 0) {
-        setColumns(records.map((stage: any) => ({
-          id: stage.slug || stage.id, // Usa o slug (ex: 'novo') se existir, senão o ID gerado
+        setColumns(records.map((stage) => ({
+          id: stage.slug ?? stage.id,
           title: stage.title,
-          color: stage.color
+          color: stage.color,
         })));
       }
     } catch (error) {

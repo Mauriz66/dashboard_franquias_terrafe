@@ -3,6 +3,45 @@ import { Lead, LeadStatus, LeadActivity, LeadTag } from '@/types/lead';
 import { useToast } from '@/hooks/use-toast';
 import { pb } from '@/lib/pocketbase';
 
+type PbTagRecord = {
+  id: string;
+  name: string;
+  color?: string;
+};
+
+type PbActivityRecord = {
+  id: string;
+  type: string;
+  content?: string;
+  created: string;
+  old_status?: string;
+  new_status?: string;
+};
+
+type PbLeadRecord = {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  capital?: string;
+  profile?: string;
+  operation?: string;
+  interest?: string;
+  source?: string;
+  status?: string;
+  notes?: string;
+  meeting_date?: string;
+  meeting_time?: string;
+  meeting_link?: string;
+  created: string;
+  updated: string;
+  expand?: {
+    tags?: PbTagRecord[];
+    activities_via_lead?: PbActivityRecord[];
+  };
+};
+
 export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,39 +50,38 @@ export function useLeads() {
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
-      const records = await pb.collection('leads').getFullList({
-        sort: '-created',
+      const records = await pb.collection('leads').getFullList<PbLeadRecord>({
         expand: 'tags,activities_via_lead', 
       });
 
-      const formattedLeads: Lead[] = records.map((record: any) => {
+      const formattedLeads: Lead[] = records.map((record) => {
         const expandedTags = record.expand?.tags || [];
         const expandedActivities = record.expand?.activities_via_lead || [];
 
         return {
           id: record.id,
           name: record.name,
-          email: record.email,
-          phone: record.phone,
-          location: record.location,
-          capital: record.capital,
-          profile: record.profile,
-          operation: record.operation,
-          interest: record.interest,
-          source: record.source,
-          status: record.status,
-          notes: record.notes,
+          email: record.email || '',
+          phone: record.phone || '',
+          location: record.location || '',
+          capital: record.capital || '',
+          profile: record.profile || '',
+          operation: record.operation || '',
+          interest: record.interest || '',
+          source: record.source || '',
+          status: (record.status || 'novo') as LeadStatus,
+          notes: record.notes || '',
           meeting: record.meeting_date ? {
             date: record.meeting_date,
             time: record.meeting_time,
             link: record.meeting_link
           } : undefined,
-          tags: expandedTags.map((t: any) => ({
+          tags: expandedTags.map((t) => ({
             id: t.id,
             name: t.name,
             color: t.color
           })),
-          activities: expandedActivities.map((a: any) => ({
+          activities: expandedActivities.map((a) => ({
             id: a.id,
             type: a.type,
             content: a.content,
@@ -54,6 +92,12 @@ export function useLeads() {
           created_at: record.created,
           updated_at: record.updated,
         };
+      });
+
+      formattedLeads.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
       });
 
       setLeads(formattedLeads);

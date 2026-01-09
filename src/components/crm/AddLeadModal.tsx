@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -110,6 +111,9 @@ export function AddLeadModal({ open, onOpenChange, onAdd }: AddLeadModalProps) {
           <DialogTitle className="text-xl font-display">
             Novo Lead
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Formulário para criar um novo lead
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
