@@ -12,13 +12,11 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build arguments for Supabase (must be passed during build time)
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
+# Build arguments for PocketBase (must be passed during build time)
+ARG VITE_POCKETBASE_URL
 
 # Set environment variables for the build process
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
 
 # Build the application
 RUN npm run build
