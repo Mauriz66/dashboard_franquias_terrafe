@@ -10,3 +10,4 @@ const getPocketBaseUrl = () => {
 };
 
 export const pb = new PocketBase(getPocketBaseUrl());
+pb.autoCancellation(false); // Disable auto-cancellation to prevent race conditions
