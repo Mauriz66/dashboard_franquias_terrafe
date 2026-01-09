@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePipeline } from '@/hooks/usePipeline';
 import { Lead } from '@/types/lead';
@@ -63,13 +64,31 @@ export function ReportsView({ leads }: ReportsViewProps) {
     }).length,
   }));
 
-  // Simulated monthly data
-  const monthlyData = [
-    { month: 'Out', novos: 8, ganhos: 2, perdidos: 1 },
-    { month: 'Nov', novos: 12, ganhos: 4, perdidos: 2 },
-    { month: 'Dez', novos: 15, ganhos: 5, perdidos: 3 },
-    { month: 'Jan', novos: leads.length, ganhos: leads.filter(l => l.status === 'ganho').length, perdidos: leads.filter(l => l.status === 'perdido').length },
-  ];
+  // Real monthly data calculation
+  const monthlyData = useMemo(() => {
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (5 - i));
+      return d;
+    });
+
+    return last6Months.map(date => {
+      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
+      const monthLabel = date.toLocaleDateString('pt-BR', { month: 'short' });
+      
+      const leadsInMonth = leads.filter(l => {
+        const created = l.created_at || l.createdAt;
+        return created && created.startsWith(monthKey);
+      });
+
+      return {
+        month: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+        novos: leadsInMonth.length,
+        ganhos: leadsInMonth.filter(l => l.status === 'ganho').length,
+        perdidos: leadsInMonth.filter(l => l.status === 'perdido').length
+      };
+    });
+  }, [leads]);
 
   // Profile distribution
   const profileData = [

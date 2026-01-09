@@ -126,13 +126,16 @@ export function DashboardView({ leads }: DashboardViewProps) {
       .slice(0, 3);
   }, [leads]);
 
-  const avgTimePerStage = {
-    novo: '2d',
-    contato: '3d',
-    qualificado: '5d',
-    proposta: '4d',
-    negociacao: '7d',
-  };
+  const avgTimePerStage = useMemo(() => {
+    // TODO: Implementar cálculo real baseado no histórico de atividades
+    return {
+      novo: '-',
+      contato: '-',
+      qualificado: '-',
+      proposta: '-',
+      negociacao: '-',
+    };
+  }, []);
 
   return (
     <div className="space-y-6 animate-fade-in">
