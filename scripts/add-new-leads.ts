@@ -1,19 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
+import PocketBase from 'pocketbase';
 import dotenv from 'dotenv';
 import path from 'path';
 
 // Carregar variáveis de ambiente
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const pbUrl = process.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090';
+const pbEmail = process.env.POCKETBASE_EMAIL;
+const pbPassword = process.env.POCKETBASE_PASSWORD;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Erro: VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY são obrigatórios no .env');
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const pb = new PocketBase(pbUrl);
 
 const leads = [
   {
@@ -25,10 +21,9 @@ const leads = [
     profile: 'investidor',
     operation: 'investidor',
     interest: 'O potencial do negócio',
-    source: 'whatsapp', // Assumindo WhatsApp dado o link de contato direto
+    source: 'whatsapp',
     status: 'qualificado',
     notes: 'MOTIVAÇÃO: Criar um legado de investimento e ajudar a marca em sua expansão com a experiência prática que já temos com o café do pé a xícara',
-    created_at: '2025-12-31T10:00:00Z', // Horário aproximado
     meeting_date: '2026-01-08',
     meeting_time: '16:00',
     meeting_link: 'https://calendar.app.google/Ss1Au61ugkaDCHCy7'
@@ -42,10 +37,9 @@ const leads = [
     profile: 'investidor',
     operation: 'investidor',
     interest: 'O potencial do negócio',
-    source: 'instagram', // Mapeando "Instagram / Facebook" para um valor válido do enum se necessário, ou mantendo texto se o front aguentar. O schema é text.
+    source: 'instagram',
     status: 'qualificado',
     notes: 'MOTIVAÇÃO: Ter meu próprio negócio. Atrelado ao sonho de ter uma cafeteria',
-    created_at: '2026-01-01T16:30:00Z',
     meeting_date: '2026-01-09',
     meeting_time: '18:00',
     meeting_link: 'https://calendar.app.google/Bjnup6yKLf7zcweJ6'
@@ -53,18 +47,31 @@ const leads = [
 ];
 
 async function addLeads() {
+  if (pbEmail && pbPassword) {
+      try {
+        await pb.admins.authWithPassword(pbEmail, pbPassword);
+      } catch (e) {
+        console.warn('Admin auth failed, proceeding as guest/public if allowed');
+      }
+  }
+
   console.log(`Adicionando ${leads.length} leads...`);
 
   for (const lead of leads) {
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([lead])
-      .select();
+    try {
+        const { meeting_date, meeting_time, meeting_link, ...rest } = lead;
+        const pbData = {
+            ...rest,
+            meeting_date,
+            meeting_time,
+            meeting_link,
+            // PB doesn't allow setting created via API easily
+        };
 
-    if (error) {
+        const record = await pb.collection('leads').create(pbData);
+        console.log(`Lead ${lead.name} adicionado com sucesso! ID: ${record.id}`);
+    } catch (error) {
       console.error(`Erro ao adicionar ${lead.name}:`, error);
-    } else {
-      console.log(`Lead ${lead.name} adicionado com sucesso! ID: ${data[0].id}`);
     }
   }
 }

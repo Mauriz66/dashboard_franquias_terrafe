@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { pb } from '@/lib/pocketbase';
 import { LeadTag } from '@/types/lead';
 
 export function useTags() {
@@ -11,15 +11,16 @@ export function useTags() {
   const fetchTags = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
+      const records = await pb.collection('tags').getFullList({
+        sort: 'name',
+      });
 
-      if (error) throw error;
-
-      setTags(data || []);
-    } catch (error) {
+      setTags(records.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        color: r.color,
+      })));
+    } catch (error: any) {
       console.error('Error fetching tags:', error);
       toast({ 
         title: 'Erro ao carregar tags', 
@@ -37,17 +38,12 @@ export function useTags() {
 
   const addTag = useCallback(async (tag: Omit<LeadTag, 'id'>) => {
     try {
-      const { data, error } = await supabase
-        .from('tags')
-        .insert(tag)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setTags(prev => [...prev, data]);
+      const record = await pb.collection('tags').create(tag);
+      const newTag = { id: record.id, name: record.name, color: record.color };
+      
+      setTags(prev => [...prev, newTag]);
       toast({ title: 'Tag criada com sucesso' });
-      return data;
+      return newTag;
     } catch (error) {
       console.error('Error adding tag:', error);
       toast({ 
@@ -61,12 +57,10 @@ export function useTags() {
 
   const updateTag = useCallback(async (tag: LeadTag) => {
     try {
-      const { error } = await supabase
-        .from('tags')
-        .update({ name: tag.name, color: tag.color })
-        .eq('id', tag.id);
-
-      if (error) throw error;
+      await pb.collection('tags').update(tag.id, {
+        name: tag.name,
+        color: tag.color
+      });
 
       setTags(prev => prev.map(t => t.id === tag.id ? tag : t));
       toast({ title: 'Tag atualizada' });
@@ -83,15 +77,7 @@ export function useTags() {
 
   const deleteTag = useCallback(async (tagId: string) => {
     try {
-      // Note: This might fail if there are foreign key constraints without cascade delete
-      // Usually, you'd want to handle cleanup in lead_tags first or rely on DB cascade
-      const { error } = await supabase
-        .from('tags')
-        .delete()
-        .eq('id', tagId);
-
-      if (error) throw error;
-
+      await pb.collection('tags').delete(tagId);
       setTags(prev => prev.filter(t => t.id !== tagId));
       toast({ title: 'Tag excluída' });
       return true;
@@ -100,7 +86,7 @@ export function useTags() {
       toast({ 
         title: 'Erro ao excluir tag', 
         description: 'Verifique se a tag está em uso.',
-        variant: 'destructive'
+        variant: 'destructive' 
       });
       return false;
     }
