@@ -11,3 +11,16 @@ const getPocketBaseUrl = () => {
 
 export const pb = new PocketBase(getPocketBaseUrl());
 pb.autoCancellation(false); // Disable auto-cancellation to prevent race conditions
+
+// Global error handler for PocketBase
+pb.beforeSend = function (url, options) {
+    console.log(`[PB Request] ${url}`, options);
+    return { url, options };
+};
+
+pb.afterSend = function (response, data) {
+    if (response.status >= 400) {
+        console.error(`[PB Error] ${response.status} ${response.url}`, data);
+    }
+    return data;
+};
