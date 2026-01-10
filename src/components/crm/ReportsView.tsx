@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePipeline } from '@/hooks/usePipeline';
 import { Lead } from '@/types/lead';
+import { parseDate } from '@/lib/utils';
 import {
   BarChart,
   Bar,
@@ -49,18 +50,40 @@ export function ReportsView({ leads }: ReportsViewProps) {
     { range: 'Acima de R$ 1M', min: 1000000, max: Infinity },
   ];
 
+  const parseCapital = (value: string): number => {
+    if (!value) return 0;
+    const str = value.toLowerCase();
+    
+    // Check for "milhão" or "milhões"
+    if (str.includes('milhão') || str.includes('milhoes') || str.includes('milhões')) {
+        const num = parseFloat(str.replace(/[^\d.,]/g, '').replace(',', '.'));
+        return num * 1000000;
+    }
+    
+    // Check for "mil" or "k"
+    if (str.includes('mil') || str.includes('k')) {
+        const num = parseFloat(str.replace(/[^\d.,]/g, '').replace(',', '.'));
+        return num * 1000;
+    }
+
+    // Try parsing as direct number
+    const numsOnly = str.replace(/[^\d.,]/g, '');
+    if (!numsOnly) return 0;
+    
+    // Handle brazilian format (1.000,00) vs international (1,000.00)
+    // Simple heuristic: if it has comma and dot, and comma is last, it's decimal
+    // If it has only comma, it might be decimal (PT-BR)
+    // We'll assume PT-BR input mainly
+    return parseFloat(numsOnly.replace('.', '').replace(',', '.'));
+  };
+
   const capitalData = capitalRanges.map(range => ({
     name: range.range,
     value: leads.filter(l => {
-      const capital = l.capital.toLowerCase();
-      if (capital.includes('até')) {
-        const value = parseInt(capital.replace(/\D/g, '')) * 1000;
-        return value >= range.min && value < range.max;
-      }
-      if (capital.includes('acima')) {
-        return range.max === Infinity;
-      }
-      return false;
+      const capital = l.capital;
+      if (!capital) return false;
+      const value = parseCapital(capital);
+      return value >= range.min && value < range.max;
     }).length,
   }));
 
@@ -77,8 +100,8 @@ export function ReportsView({ leads }: ReportsViewProps) {
       const monthLabel = date.toLocaleDateString('pt-BR', { month: 'short' });
       
       const leadsInMonth = leads.filter(l => {
-        const created = l.submitted_at || l.created_at || l.createdAt;
-        return created && created.startsWith(monthKey);
+        const created = parseDate(l.submitted_at || l.created_at || l.createdAt);
+        return created && created.toISOString().startsWith(monthKey);
       });
 
       return {

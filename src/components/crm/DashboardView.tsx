@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Lead } from '@/types/lead';
 import { usePipeline } from '@/hooks/usePipeline';
+import { parseDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -81,12 +82,12 @@ export function DashboardView({ leads }: DashboardViewProps) {
     const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
 
     const thisMonthLeads = leads.filter(l => {
-      const d = new Date(l.submitted_at || l.created_at || l.createdAt || 0);
+      const d = parseDate(l.submitted_at || l.created_at || l.createdAt) || new Date(0);
       return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
     });
 
     const lastMonthLeads = leads.filter(l => {
-      const d = new Date(l.submitted_at || l.created_at || l.createdAt || 0);
+      const d = parseDate(l.submitted_at || l.created_at || l.createdAt) || new Date(0);
       return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
     });
 
@@ -144,8 +145,8 @@ export function DashboardView({ leads }: DashboardViewProps) {
   const recentLeads = useMemo(() => {
     return [...leads]
       .sort((a, b) => {
-        const dateA = new Date(a.submitted_at || a.created_at || a.createdAt || 0).getTime();
-        const dateB = new Date(b.submitted_at || b.created_at || b.createdAt || 0).getTime();
+        const dateA = (parseDate(a.submitted_at || a.created_at || a.createdAt) || new Date(0)).getTime();
+        const dateB = (parseDate(b.submitted_at || b.created_at || b.createdAt) || new Date(0)).getTime();
         return dateB - dateA;
       })
       .slice(0, 5);
