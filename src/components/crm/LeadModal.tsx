@@ -282,7 +282,7 @@ ${lead.notes}` : ''}
               <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                 Observações
               </h4>
-              <p className="text-sm text-muted-foreground bg-secondary/50 p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground bg-secondary/50 p-4 rounded-lg whitespace-pre-wrap">
                 {lead.notes}
               </p>
             </div>
@@ -321,8 +321,8 @@ ${lead.notes}` : ''}
           {/* Metadata */}
           <div className="text-xs text-muted-foreground pt-4 border-t border-border">
             <p>
-              Criado em{' '}
-              {new Date(lead.created_at || lead.createdAt || new Date()).toLocaleDateString('pt-BR', {
+              Data de Entrada:{' '}
+              {new Date(lead.submitted_at || lead.created_at || lead.createdAt || new Date()).toLocaleDateString('pt-BR', {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',

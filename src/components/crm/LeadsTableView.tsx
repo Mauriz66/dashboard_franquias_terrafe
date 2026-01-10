@@ -141,8 +141,8 @@ export function LeadsTableView({
           break;
         case 'createdAt':
           {
-            const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
-            const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+            const dateA = new Date(a.submitted_at || a.created_at || a.createdAt || 0).getTime();
+            const dateB = new Date(b.submitted_at || b.created_at || b.createdAt || 0).getTime();
             comparison = dateA - dateB;
           }
           break;
@@ -238,6 +238,14 @@ export function LeadsTableView({
               <TableHead>Contato</TableHead>
               <TableHead>
                 <button 
+                  onClick={() => handleSort('createdAt')}
+                  className="flex items-center hover:text-foreground transition-colors"
+                >
+                  Data <SortIcon field="createdAt" />
+                </button>
+              </TableHead>
+              <TableHead>
+                <button 
                   onClick={() => handleSort('location')}
                   className="flex items-center hover:text-foreground transition-colors"
                 >
@@ -322,6 +330,9 @@ export function LeadsTableView({
                         <Mail className="h-4 w-4" />
                       </a>
                     </div>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {new Date(lead.submitted_at || lead.created_at || lead.createdAt || 0).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-sm">{lead.location}</TableCell>
                   <TableCell className="text-sm">{lead.capital}</TableCell>

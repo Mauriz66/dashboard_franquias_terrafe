@@ -12,11 +12,15 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build arguments for PocketBase (must be passed during build time)
+# Build arguments (optional, runtime env-config.js takes precedence)
 ARG VITE_POCKETBASE_URL
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
 
 # Set environment variables for the build process
 ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
 # Build the application
 RUN npm run build

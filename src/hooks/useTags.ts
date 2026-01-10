@@ -1,13 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { pb } from '@/lib/pocketbase';
 import { LeadTag } from '@/types/lead';
-
-type PbTag = {
-  id: string;
-  name: string;
-  color?: string;
-};
+import { supabase } from '@/lib/supabase';
 
 export function useTags() {
   const [tags, setTags] = useState<LeadTag[]>([]);
@@ -17,20 +11,14 @@ export function useTags() {
   const fetchTags = useCallback(async () => {
     try {
       setLoading(true);
-      const records = await pb.collection('tags').getFullList<PbTag>({
-        sort: 'name',
-      });
-
-      setTags(records.map((r) => ({
-        id: r.id,
-        name: r.name,
-        color: r.color,
-      })));
+      const res = await supabase.from('tags').select('id,name,color').order('name', { ascending: true });
+      if (res.error) throw res.error;
+      setTags((res.data || []).map((r) => ({ id: r.id, name: r.name, color: r.color })));
     } catch (error) {
       console.error('Error fetching tags:', error);
       toast({ 
         title: 'Erro ao carregar tags', 
-        description: 'Verifique sua conexão.',
+        description: 'Verifique a conexão/configuração do Supabase.',
         variant: 'destructive'
       });
     } finally {
@@ -44,9 +32,9 @@ export function useTags() {
 
   const addTag = useCallback(async (tag: Omit<LeadTag, 'id'>) => {
     try {
-      const record = await pb.collection('tags').create(tag);
-      const newTag = { id: record.id, name: record.name, color: record.color };
-      
+      const res = await supabase.from('tags').insert([{ name: tag.name, color: tag.color }]).select('id,name,color').single();
+      if (res.error) throw res.error;
+      const newTag = { id: res.data.id, name: res.data.name, color: res.data.color };
       setTags(prev => [...prev, newTag]);
       toast({ title: 'Tag criada com sucesso' });
       return newTag;
@@ -63,10 +51,8 @@ export function useTags() {
 
   const updateTag = useCallback(async (tag: LeadTag) => {
     try {
-      await pb.collection('tags').update(tag.id, {
-        name: tag.name,
-        color: tag.color
-      });
+      const res = await supabase.from('tags').update({ name: tag.name, color: tag.color }).eq('id', tag.id);
+      if (res.error) throw res.error;
 
       setTags(prev => prev.map(t => t.id === tag.id ? tag : t));
       toast({ title: 'Tag atualizada' });
@@ -83,7 +69,8 @@ export function useTags() {
 
   const deleteTag = useCallback(async (tagId: string) => {
     try {
-      await pb.collection('tags').delete(tagId);
+      const res = await supabase.from('tags').delete().eq('id', tagId);
+      if (res.error) throw res.error;
       setTags(prev => prev.filter(t => t.id !== tagId));
       toast({ title: 'Tag excluída' });
       return true;

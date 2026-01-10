@@ -77,6 +77,7 @@ async function main() {
                 { name: 'source', type: 'text', required: false },
                 { name: 'status', type: 'text', required: false }, // default 'novo' logic in app
                 { name: 'notes', type: 'text', required: false },
+                { name: 'submitted_at', type: 'date', required: false },
                 { name: 'meeting_date', type: 'date', required: false },
                 { name: 'meeting_time', type: 'text', required: false },
                 { name: 'meeting_link', type: 'url', required: false },

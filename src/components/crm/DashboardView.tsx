@@ -73,7 +73,36 @@ export function DashboardView({ leads }: DashboardViewProps) {
     ).length;
     const conversionRate = total > 0 ? Math.round((wonLeads / total) * 100) : 0;
 
-    return { total, newLeads, wonLeads, lostLeads, inProgress, conversionRate };
+    // Calculate growth stats
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+    const thisMonthLeads = leads.filter(l => {
+      const d = new Date(l.submitted_at || l.created_at || l.createdAt || 0);
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    });
+
+    const lastMonthLeads = leads.filter(l => {
+      const d = new Date(l.submitted_at || l.created_at || l.createdAt || 0);
+      return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    });
+
+    const leadsGrowth = lastMonthLeads.length > 0 
+      ? Math.round(((thisMonthLeads.length - lastMonthLeads.length) / lastMonthLeads.length) * 100)
+      : 0;
+
+    const thisMonthWon = thisMonthLeads.filter(l => l.status === 'ganho').length;
+    const lastMonthWon = lastMonthLeads.filter(l => l.status === 'ganho').length;
+
+    const thisMonthConv = thisMonthLeads.length > 0 ? (thisMonthWon / thisMonthLeads.length) : 0;
+    const lastMonthConv = lastMonthLeads.length > 0 ? (lastMonthWon / lastMonthLeads.length) : 0;
+
+    const conversionGrowth = Math.round((thisMonthConv - lastMonthConv) * 100);
+
+    return { total, newLeads, wonLeads, lostLeads, inProgress, conversionRate, leadsGrowth, conversionGrowth };
   }, [leads]);
 
   const funnelData = useMemo(() => {
@@ -100,7 +129,10 @@ export function DashboardView({ leads }: DashboardViewProps) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      const count = leads.filter((l) => l.created_at?.startsWith(dateStr) || l.createdAt?.startsWith(dateStr)).length;
+      const count = leads.filter((l) => {
+        const leadDate = l.submitted_at || l.created_at || l.createdAt;
+        return leadDate?.startsWith(dateStr);
+      }).length;
       days.push({
         day: date.toLocaleDateString('pt-BR', { weekday: 'short' }),
         leads: count,
@@ -112,8 +144,8 @@ export function DashboardView({ leads }: DashboardViewProps) {
   const recentLeads = useMemo(() => {
     return [...leads]
       .sort((a, b) => {
-        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
-        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        const dateA = new Date(a.submitted_at || a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.submitted_at || b.created_at || b.createdAt || 0).getTime();
         return dateB - dateA;
       })
       .slice(0, 5);
@@ -150,8 +182,10 @@ export function DashboardView({ leads }: DashboardViewProps) {
                   {stats.total}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <ArrowUpRight className="h-3 w-3 text-lead-won" />
-                  <span className="text-lead-won">+12%</span> este mês
+                  <ArrowUpRight className={`h-3 w-3 ${stats.leadsGrowth >= 0 ? 'text-lead-won' : 'text-lead-lost'}`} />
+                  <span className={`${stats.leadsGrowth >= 0 ? 'text-lead-won' : 'text-lead-lost'}`}>
+                    {stats.leadsGrowth > 0 ? '+' : ''}{stats.leadsGrowth}%
+                  </span> este mês
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -208,8 +242,10 @@ export function DashboardView({ leads }: DashboardViewProps) {
                   {stats.conversionRate}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <ArrowUpRight className="h-3 w-3 text-lead-won" />
-                  <span className="text-lead-won">+5%</span> vs mês anterior
+                  <ArrowUpRight className={`h-3 w-3 ${stats.conversionGrowth >= 0 ? 'text-lead-won' : 'text-lead-lost'}`} />
+                  <span className={`${stats.conversionGrowth >= 0 ? 'text-lead-won' : 'text-lead-lost'}`}>
+                    {stats.conversionGrowth > 0 ? '+' : ''}{stats.conversionGrowth}%
+                  </span> vs mês anterior
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-lead-won/10 text-lead-won flex items-center justify-center">
@@ -371,7 +407,7 @@ export function DashboardView({ leads }: DashboardViewProps) {
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(lead.created_at || lead.createdAt || new Date()).toLocaleDateString('pt-BR')}
+                    {new Date(lead.submitted_at || lead.created_at || lead.createdAt || new Date()).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
               ))}

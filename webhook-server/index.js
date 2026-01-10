@@ -1,33 +1,22 @@
 const express = require('express');
 const cors = require('cors');
-const PocketBase = require('pocketbase/cjs');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const POCKETBASE_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090';
-const POCKETBASE_EMAIL = process.env.POCKETBASE_EMAIL;
-const POCKETBASE_PASSWORD = process.env.POCKETBASE_PASSWORD;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const pb = new PocketBase(POCKETBASE_URL);
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+}
 
-// Authenticate
-const authenticate = async () => {
-    try {
-        if (POCKETBASE_EMAIL && POCKETBASE_PASSWORD) {
-            await pb.admins.authWithPassword(POCKETBASE_EMAIL, POCKETBASE_PASSWORD);
-            console.log('Authenticated with PocketBase');
-        } else {
-            console.warn('PocketBase credentials not provided. Ensure public access or set env vars.');
-        }
-    } catch (e) {
-        console.error('PocketBase Auth Error:', e);
-    }
-};
-
-authenticate();
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 // --- Mapping Logic ---
 const mapSource = (source) => {
@@ -85,6 +74,66 @@ const determineTags = (data) => {
   return tags;
 };
 
+const parsePtBrDate = (dateStr) => {
+  if (!dateStr) return new Date().toISOString();
+
+  const months = {
+    'jan.': 0, 'fev.': 1, 'mar.': 2, 'abr.': 3, 'mai.': 4, 'jun.': 5,
+    'jul.': 6, 'ago.': 7, 'set.': 8, 'out.': 9, 'nov.': 10, 'dez.': 11,
+    'jan': 0, 'fev': 1, 'mar': 2, 'abr': 3, 'mai': 4, 'jun': 5,
+    'jul': 6, 'ago': 7, 'set': 8, 'out': 9, 'nov': 10, 'dez': 11,
+  };
+
+  const now = new Date();
+  let year = now.getFullYear();
+  let month = now.getMonth();
+  let day = now.getDate();
+  let hour = 0;
+  let minute = 0;
+
+  const cleanStr = String(dateStr).toLowerCase().replace(/de /g, '').trim();
+  const parts = cleanStr.split(/[\s,]+/).filter(Boolean);
+
+  if (parts.length >= 2) {
+    day = Number.parseInt(parts[0], 10);
+    const monthStr = parts[1];
+    if (months[monthStr] !== undefined) month = months[monthStr];
+
+    if (parts.length >= 4 && /^\d{4}$/.test(parts[2])) {
+      year = Number.parseInt(parts[2], 10);
+    }
+
+    const timeStr = parts[parts.length - 1];
+    if (timeStr.includes(':')) {
+      const [h, m] = timeStr.split(':').map((n) => Number.parseInt(n, 10));
+      hour = Number.isFinite(h) ? h : 0;
+      minute = Number.isFinite(m) ? m : 0;
+    }
+  }
+
+  const date = new Date(year, month, day, hour, minute);
+  if (Number.isNaN(date.getTime())) return new Date().toISOString();
+
+  if (date > new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30)) {
+    date.setFullYear(date.getFullYear() - 1);
+  }
+
+  return date.toISOString();
+};
+
+const parseSubmittedAt = (value) => {
+  if (!value) return new Date().toISOString();
+  if (value instanceof Date) return value.toISOString();
+
+  const s = String(value).trim();
+  if (!s) return new Date().toISOString();
+
+  const isoCandidate = new Date(s);
+  if (!Number.isNaN(isoCandidate.getTime())) return isoCandidate.toISOString();
+
+  return parsePtBrDate(s);
+};
+
 // --- Route ---
 app.post('/', async (req, res) => {
   try {
@@ -100,83 +149,94 @@ app.post('/', async (req, res) => {
     // 1. Handle Tags
     const tagsToApply = determineTags(data);
     const tagIds = [];
-    
+
     for (const tag of tagsToApply) {
-        try {
-            // Check if tag exists
-            const existingTag = await pb.collection('tags').getFirstListItem(`name="${tag.name}"`);
-            tagIds.push(existingTag.id);
-        } catch (e) {
-            // If 404 or error, try creating
-             try {
-                const newTag = await pb.collection('tags').create({ name: tag.name, color: tag.color });
-                tagIds.push(newTag.id);
-             } catch (createError) {
-                 console.error('Error creating tag:', createError);
-             }
-        }
+      const find = await supabase.from('tags').select('id').eq('name', tag.name).maybeSingle();
+      if (find.error) {
+        console.error('Error finding tag:', find.error);
+        continue;
+      }
+      if (find.data?.id) {
+        tagIds.push(find.data.id);
+        continue;
+      }
+
+      const created = await supabase.from('tags').insert([{ name: tag.name, color: tag.color }]).select('id').single();
+      if (created.error) {
+        console.error('Error creating tag:', created.error);
+        continue;
+      }
+      tagIds.push(created.data.id);
     }
 
     const leadToInsert = {
       name: data.nome || 'Sem nome',
-      email: data.email || undefined,
-      phone: data.telefone || undefined,
-      location: data.localizacao || data.outra_localizacao || undefined,
-      capital: data.capital || undefined,
+      email: data.email || null,
+      phone: data.telefone || null,
+      location: data.localizacao || data.outra_localizacao || null,
+      capital: data.capital || null,
       profile: mapProfile(data.perfil_operador),
       operation: mapOperation(data.perfil_operador),
-      interest: data.atracao || undefined,
+      interest: data.atracao || null,
       source: mapSource(data.origem_lead),
       status: 'novo',
       notes: notesParts.join('\n\n'),
-      tags: tagIds,
+      submitted_at: parseSubmittedAt(data.submitted_at || data.submittedAt || data['Submitted at']),
     };
 
-    // 2. Insert or Update Lead (Upsert Logic)
-    let leadRecord;
+    // 2. Insert or Update Lead
+    let leadRecord = null;
     let isNew = false;
 
-    // Try to find existing lead by email
     if (leadToInsert.email) {
-        try {
-            const existingLead = await pb.collection('leads').getFirstListItem(`email="${leadToInsert.email}"`);
-            // Update existing
-            leadRecord = await pb.collection('leads').update(existingLead.id, leadToInsert);
-            console.log('Lead updated:', leadRecord.id);
-        } catch (e) {
-            // Not found, proceed to create
-        }
+      const found = await supabase.from('leads').select('id').eq('email', leadToInsert.email).maybeSingle();
+      if (found.error) throw found.error;
+      if (found.data?.id) {
+        const updated = await supabase.from('leads').update(leadToInsert).eq('id', found.data.id).select('id').single();
+        if (updated.error) throw updated.error;
+        leadRecord = updated.data;
+      }
     }
 
-    // If not found by email, try by phone (if provided)
     if (!leadRecord && leadToInsert.phone) {
-         try {
-            // Clean phone for search might be needed, but assuming exact match for now
-            const existingLead = await pb.collection('leads').getFirstListItem(`phone="${leadToInsert.phone}"`);
-            // Update existing
-            leadRecord = await pb.collection('leads').update(existingLead.id, leadToInsert);
-            console.log('Lead updated (by phone):', leadRecord.id);
-        } catch (e) {
-            // Not found
-        }
+      const found = await supabase.from('leads').select('id').eq('phone', leadToInsert.phone).maybeSingle();
+      if (found.error) throw found.error;
+      if (found.data?.id) {
+        const updated = await supabase.from('leads').update(leadToInsert).eq('id', found.data.id).select('id').single();
+        if (updated.error) throw updated.error;
+        leadRecord = updated.data;
+      }
     }
 
-    // If still no record, create new
     if (!leadRecord) {
-        leadRecord = await pb.collection('leads').create(leadToInsert);
-        isNew = true;
-        console.log('Lead created:', leadRecord.id);
+      const created = await supabase.from('leads').insert([leadToInsert]).select('id').single();
+      if (created.error) throw created.error;
+      leadRecord = created.data;
+      isNew = true;
+    }
+
+    if (tagIds.length > 0) {
+      try {
+        await supabase.from('lead_tags').delete().eq('lead_id', leadRecord.id);
+        await supabase.from('lead_tags').insert(tagIds.map((tagId) => ({ lead_id: leadRecord.id, tag_id: tagId })));
+      } catch (tagError) {
+        console.error('Error setting lead tags:', tagError);
+      }
     }
     
     // 3. Insert Activity
     try {
-        await pb.collection('activities').create({
-            lead: leadRecord.id,
-            type: 'note',
-            content: isNew ? 'Lead criado via Webhook' : 'Lead atualizado via Webhook'
-        });
+      await supabase.from('activities').insert([
+        {
+          lead_id: leadRecord.id,
+          type: 'note',
+          content: isNew ? 'Lead criado via Webhook' : 'Lead atualizado via Webhook',
+          old_status: null,
+          new_status: null,
+        },
+      ]);
     } catch (actError) {
-        console.error('Error creating activity:', actError);
+      console.error('Error creating activity:', actError);
     }
 
     res.status(200).json({ success: true, leadId: leadRecord.id, isNew });

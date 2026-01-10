@@ -77,7 +77,7 @@ export function ReportsView({ leads }: ReportsViewProps) {
       const monthLabel = date.toLocaleDateString('pt-BR', { month: 'short' });
       
       const leadsInMonth = leads.filter(l => {
-        const created = l.created_at || l.createdAt;
+        const created = l.submitted_at || l.created_at || l.createdAt;
         return created && created.startsWith(monthKey);
       });
 

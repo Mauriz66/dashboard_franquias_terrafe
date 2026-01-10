@@ -119,6 +119,12 @@ export function LeadCard({ lead, onClick, onEdit, onDelete, onDuplicate, onAddNo
         <div className="text-xs">
           {profileLabels[lead.profile] || lead.profile}
         </div>
+        <div className="flex items-center gap-1.5 text-xs pt-1">
+          <Calendar className="h-3 w-3" />
+          <span>
+            Entrada: {new Date(lead.submitted_at || lead.created_at || new Date()).toLocaleDateString('pt-BR')}
+          </span>
+        </div>
       </div>
 
       {/* Meeting */}

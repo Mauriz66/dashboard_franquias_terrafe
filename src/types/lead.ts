@@ -60,6 +60,7 @@ export interface Lead {
   status: LeadStatus;
   tags: LeadTag[];
   meeting?: LeadMeeting;
+  submitted_at?: string;
   notes?: string;
   activities?: LeadActivity[];
   createdAt?: string; // Mantido para compatibilidade

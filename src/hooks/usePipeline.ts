@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { pb } from '@/lib/pocketbase';
 import { KanbanColumn } from '@/types/lead';
 import { kanbanColumns as defaultColumns } from '@/data/config';
+import { supabase } from '@/lib/supabase';
 
 export interface PipelineStage {
   id: string;
@@ -10,11 +10,12 @@ export interface PipelineStage {
   order_index: number;
 }
 
-type PbPipelineStage = {
+type PipelineStageRow = {
   id: string;
-  slug?: string;
+  slug: string | null;
   title: string;
   color: string;
+  order_index: number | null;
 };
 
 export function usePipeline() {
@@ -24,16 +25,27 @@ export function usePipeline() {
   const fetchPipeline = useCallback(async () => {
     try {
       setLoading(true);
-      const records = await pb.collection('pipeline_stages').getFullList<PbPipelineStage>({
-        sort: 'order_index',
-      });
+      const res = await supabase
+        .from('pipeline_stages')
+        .select('id,slug,title,color,order_index')
+        .order('order_index', { ascending: true, nullsFirst: false });
 
-      if (records && records.length > 0) {
-        setColumns(records.map((stage) => ({
-          id: stage.slug ?? stage.id,
-          title: stage.title,
-          color: stage.color,
-        })));
+      if (res.error) {
+        setColumns(defaultColumns);
+        return;
+      }
+
+      const records = (res.data || []) as PipelineStageRow[];
+      if (records.length > 0) {
+        setColumns(
+          records.map((stage) => ({
+            id: stage.slug || stage.id,
+            title: stage.title,
+            color: stage.color,
+          }))
+        );
+      } else {
+        setColumns(defaultColumns);
       }
     } catch (error) {
       console.error('Error fetching pipeline:', error);
