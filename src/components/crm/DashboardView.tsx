@@ -159,15 +159,65 @@ export function DashboardView({ leads }: DashboardViewProps) {
   }, [leads]);
 
   const avgTimePerStage = useMemo(() => {
-    // TODO: Implementar cálculo real baseado no histórico de atividades
-    return {
+    const stageDurations: Record<string, number[]> = {};
+
+    leads.forEach((lead) => {
+      if (!lead.activities || lead.activities.length === 0) return;
+
+      // Sort activities by date
+      const sortedActivities = [...lead.activities].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      // Track entry time for current status
+      let currentStatus = 'novo';
+      let entryTime = new Date(lead.submitted_at || lead.created_at || lead.createdAt || 0).getTime();
+
+      sortedActivities.forEach((activity) => {
+        if (activity.oldStatus && activity.newStatus) {
+          const changeTime = new Date(activity.createdAt).getTime();
+          const duration = changeTime - entryTime; // ms
+
+          if (!stageDurations[activity.oldStatus]) {
+            stageDurations[activity.oldStatus] = [];
+          }
+          stageDurations[activity.oldStatus].push(duration);
+
+          // Update for next stage
+          currentStatus = activity.newStatus;
+          entryTime = changeTime;
+        }
+      });
+      
+      // Note: We don't count the current ongoing stage duration because it hasn't finished yet
+    });
+
+    const formatDuration = (ms: number) => {
+      const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+      if (days > 0) return `${days}d`;
+      const hours = Math.floor(ms / (1000 * 60 * 60));
+      if (hours > 0) return `${hours}h`;
+      return '< 1h';
+    };
+
+    const result: Record<string, string> = {
       novo: '-',
       contato: '-',
       qualificado: '-',
       proposta: '-',
       negociacao: '-',
     };
-  }, []);
+
+    Object.keys(result).forEach((key) => {
+      if (stageDurations[key] && stageDurations[key].length > 0) {
+        const total = stageDurations[key].reduce((a, b) => a + b, 0);
+        const avg = total / stageDurations[key].length;
+        result[key] = formatDuration(avg);
+      }
+    });
+
+    return result;
+  }, [leads]);
 
   return (
     <div className="space-y-6 animate-fade-in">
