@@ -314,6 +314,60 @@ export function useLeads() {
     }
   }, [leads, addLead, toast]);
 
+  const updateLeadStatus = useCallback(async (leadId: string, newStatus: LeadStatus) => {
+    try {
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) return;
+      
+      const oldStatus = lead.status;
+      if (oldStatus === newStatus) return;
+
+      // Optimistic update
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      // Add activity
+      await supabase.from('activities').insert([{
+        lead_id: leadId,
+        type: 'status_change',
+        content: `Status alterado de ${oldStatus} para ${newStatus}`,
+        old_status: oldStatus,
+        new_status: newStatus
+      }]);
+      
+      // Background refresh to ensure consistency
+      fetchLeads();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
+      fetchLeads(); // Revert on error
+    }
+  }, [leads, fetchLeads, toast]);
+
+  const addNote = useCallback(async (leadId: string, content: string) => {
+    try {
+      const { error } = await supabase.from('activities').insert([{
+        lead_id: leadId,
+        type: 'note',
+        content: content
+      }]);
+
+      if (error) throw error;
+      
+      toast({ title: 'Nota adicionada' });
+      fetchLeads();
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast({ title: 'Erro ao adicionar nota', variant: 'destructive' });
+    }
+  }, [fetchLeads, toast]);
+
   return {
     leads,
     loading,
@@ -322,6 +376,8 @@ export function useLeads() {
     deleteLead,
     restoreLead,
     duplicateLead,
+    updateLeadStatus,
+    addNote,
     refreshLeads: fetchLeads
   };
 }
